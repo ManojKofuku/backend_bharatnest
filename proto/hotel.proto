@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package hotel;
+option go_package = "backend/proto/hotel";
+
+import "google/protobuf/timestamp.proto";
+
+// Hotel message definition
+message Hotel {
+  uint64 id = 1;
+  string name = 2;
+  string location_short = 3;
+  string full_address = 4;
+  string pin_code = 5;
+  string landmark = 6;
+  double price = 7;
+  double rating = 8;
+  string image = 9;
+  bool availability = 10;
+  string description = 11;
+  string location_link = 12;
+  bool superhost = 13;
+  string host_story = 14;
+  string cancellation_policy = 15;
+  google.protobuf.Timestamp checkin_time = 16;
+  uint64 manager_id = 17;
+  repeated Room rooms = 18;
+  repeated string amenities = 19;
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+}
+
+// Room message definition
+message Room {
+  uint64 id = 1;
+  uint64 hotel_id = 2;
+  string room_type = 3;
+  string bed_type = 4;
+  int32 capacity = 5;
+  double price = 6;
+  bool available = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// Manager message definition
+message Manager {
+  uint64 id = 1;
+  string name = 2;
+  string about = 3;
+  string phone = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// Request for getting all hotels
+message GetAllHotelsRequest {
+  // Optional pagination parameters
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+// Response for getting all hotels
+message GetAllHotelsResponse {
+  repeated Hotel hotels = 1;
+  int32 total_count = 2;
+}
+
+// Hotel service definition
+service HotelService {
+  // Get all hotels with details
+  rpc GetAllHotels(GetAllHotelsRequest) returns (GetAllHotelsResponse) {}
+} 

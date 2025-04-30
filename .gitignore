@@ -1,0 +1,27 @@
+# Compiled binary
+backend
+
+# Secrets
+.env
+
+# Database files
+*.db
+*.sqlite
+
+# Generated protocol buffer files
+/proto/hotel/*.pb.go
+
+# Temporary files
+tmp/
+
+# Logs
+*.log
+
+# Local development files
+.air.toml
+
+# macOS specific files
+.DS_Store
+
+# Sample data SQL - only if containing sensitive data
+# sample_data*.sql 
