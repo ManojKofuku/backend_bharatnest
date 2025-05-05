@@ -2,10 +2,11 @@
 package controllers
 
 import (
-	"net/http"
-	"time"	
 	"backend/initializers"
 	"backend/models"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
@@ -56,6 +57,7 @@ func Login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": user.ID,
 		"email":  user.Email,
+		"phoneNumber": user.PhoneNumber,
 		"role":   role.Role,
 		"exp":    time.Now().Add(24 * 60 * 60 * time.Second).Unix(), // token expiry in 24 hours
 	})

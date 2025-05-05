@@ -23,6 +23,7 @@ func CreateUser(c *gin.Context) {
 	var body struct {
 		FullName    string `json:"fullName"`
 		Email       string `json:"email" binding:"required,email"`
+		PhoneNumber string `json:"phoneNumber" binding:"required,min=10,max=15"`
 		Password    string `json:"password" binding:"required,min=8"` // Added password field with validation
 		DateOfBirth string `json:"dateOfBirth"` // Format: dd/mm/yyyy
 		Gender      string `json:"gender"`
@@ -79,6 +80,7 @@ func CreateUser(c *gin.Context) {
 		ID:             newUUID,
 		FullName:       body.FullName,
 		Email:          body.Email,
+		PhoneNumber:    body.PhoneNumber,
 		HashedPassword: string(hashedPassword), // Store the hashed password
 		DateOfBirth:    dob.Format("02/01/2006"),
 		IsInvited:      true,
@@ -95,6 +97,7 @@ func CreateUser(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": user.ID,
 		"email":  user.Email,
+		"phoneNumber": user.PhoneNumber,
 		"role":   role.Role,
 		"exp":    time.Now().Add(24 * 60 * 60 * time.Second).Unix(), // token expiry in 24 hours
 	})
@@ -131,4 +134,40 @@ func GetUser(c *gin.Context) {
 	})
 }
 
+func GetCurrentUser(c *gin.Context) {
+	// Get claims that were set by AuthMiddleware
+	claims, exists := c.Get("claims")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authentication token"})
+		return
+	}
 
+	mapClaims, ok := claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+		return
+	}
+
+	// Extract user information from claims set by AuthMiddleware
+	userID, ok := mapClaims["userID"].(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user identification"})
+		return
+	}
+
+	var user models.User
+	if err := initializers.DB.Preload("Role").Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Return user details
+	c.JSON(http.StatusOK, gin.H{
+		"id":          user.ID,
+		"email":       user.Email,
+		"phoneNumber": user.PhoneNumber,
+		"fullName":    user.FullName,
+		"dateOfBirth": user.DateOfBirth,
+		"role":        user.Role.Role,
+	})
+}

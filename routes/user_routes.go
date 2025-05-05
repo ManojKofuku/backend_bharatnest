@@ -2,21 +2,26 @@ package routes
 
 import (
 	"backend/controllers"
+	"backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 // RegisterUserRoutes registers all the user/auth routes to the Gin router
 func RegisterUserRoutes(r *gin.Engine) {
-	userRoutes := r.Group("/api/users")
+	// Public routes (no authentication required)
+	publicRoutes := r.Group("/api")
 	{
-		userRoutes.POST("", controllers.CreateUser) // admin-only endpoint
-		userRoutes.GET("", controllers.GetUser) // admin-only endpoint
+		// Auth routes
+		publicRoutes.POST("/auth/login", controllers.Login)
+		publicRoutes.POST("/users/register", controllers.CreateUser)
 	}
 
-	// Auth routes
-	authRoutes := r.Group("/api/auth")
+	// Protected routes (authentication required)
+	protectedRoutes := r.Group("/api")
+	protectedRoutes.Use(middleware.AuthMiddleware())
 	{
-		authRoutes.POST("/login", controllers.Login)
+		// Current user routes
+		protectedRoutes.GET("/users/me", controllers.GetCurrentUser)
 	}
 }
