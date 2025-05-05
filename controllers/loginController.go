@@ -6,36 +6,42 @@ import (
 	"time"	
 	"backend/initializers"
 	"backend/models"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 func Login(c *gin.Context) {
 	var body struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
+		EmailOrPhone bool   `json:"email_or_phone_number" binding:"required"` // true means email, false means phone
+		Input        string `json:"input" binding:"required"`
+		Password     string `json:"password" binding:"required"`
 	}
 
-	// Parse the incoming JSON request body
+	// Parse and validate the request body
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Find the user by email
+	// Find the user by email or phone based on the flag
 	var user models.User
-	if err := initializers.DB.Where("email = ?", body.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	var err error
+
+	if body.EmailOrPhone {
+		err = initializers.DB.Where("email = ?", body.Input).First(&user).Error
+	} else {
+		err = initializers.DB.Where("phone_number = ?", body.Input).First(&user).Error
+	}
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email/phone or password"})
 		return
 	}
 
-	// Check if the password matches
-	err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(body.Password))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	// Check password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(body.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email/phone or password"})
 		return
 	}
 
@@ -60,14 +66,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Return the token
+	// Respond with token and message
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
-		"user": gin.H{
-			"id":       user.ID,
-			"email":    user.Email,
-			"fullName": user.FullName,
-			"role":     role.Role,
-		},
+		"message": "Login successful",
+		"token":   tokenString,
 	})
 }
